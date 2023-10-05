@@ -35,11 +35,6 @@ Pulley is a remix from here: https://www.thingiverse.com/thing:16627
     3x Aluporfile (L3 == e) 10x10mm
     6x GFK/Aluminium Rundrohr 10cm  (L4==re) Durchmesser
 
-    const float e = 115.0;     // end effector
-    const float f = 457.3;     // base
-    const float re = 232.0;
-    const float rf = 112.0;
-    
     1x CNC Shield V3 Development Board for A4988 drivers Stepper for 3D printer compatible with Arduino
     1x Arduino Mega
     3x Micro Limit Switch
