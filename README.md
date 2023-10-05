@@ -17,6 +17,9 @@ See https://www.thingiverse.com/thing:6248772
 
 Pulley is a remix from here: https://www.thingiverse.com/thing:16627
 
+## Electronics
+
+CNC Shield: https://github.com/Protoneer/Fritzing_Parts
 
 ## To buy
 
