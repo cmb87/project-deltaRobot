@@ -95,6 +95,10 @@ void Disabled(){digitalWrite(enablePin,HIGH);}
 
 // ==================================
 void sendController(float theta1, float theta2, float theta3, long home, long status){
+  /**
+  Function which sends state back to controller (python script) via serial protocol.
+  */
+
   stateStruct.theta1 = theta1;
   stateStruct.theta2 = theta2;
   stateStruct.theta3 = theta3;
@@ -106,20 +110,24 @@ void sendController(float theta1, float theta2, float theta3, long home, long st
   uint16_t sendSize = 0;
   sendSize = myTransfer.txObj(stateStruct, sendSize);
   myTransfer.sendData(sendSize);
+
 }
 
 // ==================================
-void HomeMachine(){
+void homeMachine(){
+  /**
+  Function for homing machine
+  */
 
-  // Let controller know we are homing
+  // Let controller know we are homing, all since we are not homed yet (=0), all angles are unkown (-1) and busy (503)
   sendController(-1, -1, -1, 0, 503);
 
-  // If you run this code and open the Serial Plotter, you’ll see that the default value is 1 (HIGH). 
-  // When you press the button the state directly goes to 0 (LOW) and comes back to HIGH when you release the button.
-  Xaxis.setSpeed(300); // Set the initial motor speed
-  Yaxis.setSpeed(300); // Set the initial motor speed
-  Zaxis.setSpeed(300); // Set the initial motor speed
+  // Set speed for homing
+  Xaxis.setSpeed(300); 
+  Yaxis.setSpeed(300); 
+  Zaxis.setSpeed(300); 
 
+  // Important assumption: all arms are lower than HomeAngle!!!! Otherwise we crash :X
   while(digitalRead(limitPinX) == HIGH || digitalRead(limitPinY) == HIGH || digitalRead(limitPinZ) == HIGH)
   {
     if(digitalRead(limitPinX) == HIGH){
@@ -137,19 +145,23 @@ void HomeMachine(){
     } else {
       Zaxis.stop();
     }  
-    //delay(1000); // Moment s'attente pour observer les moteurs
   }
   
-  Xaxis.setCurrentPosition(HomeAngle*Multiplier);
-  Yaxis.setCurrentPosition(HomeAngle*Multiplier);
-  Zaxis.setCurrentPosition(HomeAngle*Multiplier);
+  // Store current steps
+  Xaxis.setCurrentPosition((90-HomeAngle)*Multiplier);
+  Yaxis.setCurrentPosition((90-HomeAngle)*Multiplier);
+  Zaxis.setCurrentPosition((90-HomeAngle)*Multiplier);
 
-  // Send state update
-  sendController(HomeAngle*Multiplier, HomeAngle*Multiplier, HomeAngle*Multiplier, 1, 200);
+  // Let controller know we are homed and ready for receiving orders
+  sendController(
+    90-HomeAngle*Multiplier,
+    90-HomeAngle*Multiplier,
+    90-HomeAngle*Multiplier,
+    1,
+    200
+  );
 
 }
-
-
 
 // ==================================
 void SetMotors(){  
@@ -186,6 +198,7 @@ void setup(){
     pinMode(limitPinX, INPUT_PULLUP);
     pinMode(limitPinY, INPUT_PULLUP);
     pinMode(limitPinZ, INPUT_PULLUP);
+
     pinMode(enablePin, OUTPUT);
     digitalWrite(enablePin,HIGH);
 
@@ -211,7 +224,7 @@ void setup(){
     // Home Robot
     Enabled();
     delay(1000); 
-    HomeMachine();
+    homeMachine();
     delay(1000); 
   
 
@@ -220,49 +233,51 @@ void setup(){
 // ==================================
 void loop(){
 
+  // ------------------------------------
+  // Commands available on Serial ....
   if(myTransfer.available()){
 
     // Receive Serial 
     uint16_t recSize = 0;
     recSize = myTransfer.rxObj(controllStruct, recSize);
 
-    // Home machine
+    // Home machine (if controll struct says so)
     if ( controllStruct.home ) {
       Disabled();
       delay(1000);
       Enabled();
-      HomeMachine();
+      homeMachine();
     }
 
     // Tell controller latest position and that we are busy ...
     sendController(
-      Xaxis.currentPosition(),
-      Yaxis.currentPosition(),
-      Zaxis.currentPosition(),
+      90-Xaxis.currentPosition()/Multiplier,
+      90-Yaxis.currentPosition()/Multiplier,
+      90-Zaxis.currentPosition()/Multiplier,
       1,
       503
     );
 
-    // ------------------ Motion Planning and Execution -----------------------
+    // Motion Planning and Execution
     // Execute motion (move() = relative, moveTo() absolute)
-    Xaxis.moveTo(controllStruct.theta1*Multiplier);
-    Yaxis.moveTo(controllStruct.theta2*Multiplier);
-    Zaxis.moveTo(controllStruct.theta3*Multiplier);
-    
+    Xaxis.moveTo((90-controllStruct.theta1)*Multiplier);
+    Yaxis.moveTo((90-controllStruct.theta2)*Multiplier);
+    Zaxis.moveTo((90-controllStruct.theta3)*Multiplier);
+
+
     // Execute motion
     while(Xaxis.distanceToGo() != 0 || Yaxis.distanceToGo() != 0 || Zaxis.distanceToGo() != 0){
       Xaxis.run();
       Yaxis.run();
       Zaxis.run();
     }
-    // ------------------------------------------------------------------------
   }
 
   // Tell controller latest position and that we are ready to receive new points ...
   sendController(
-    Xaxis.currentPosition(),
-    Yaxis.currentPosition(),
-    Zaxis.currentPosition(),
+      90-Xaxis.currentPosition()/Multiplier,
+      90-Yaxis.currentPosition()/Multiplier,
+      90-Zaxis.currentPosition()/Multiplier,
     1,
     200
   );

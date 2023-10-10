@@ -118,6 +118,7 @@ commandAvailable = True
 
 waypoints = [thetaW1, thetaW2, thetaW3, thetaW4]
 idx = 0
+a = True
 
 try:
 
@@ -129,13 +130,17 @@ try:
 
 
         if status == 200 and commandAvailable:
-            # Ready to take orders
-            theta1 = int(waypoints[idx][0])+40
-            theta2 = int(waypoints[idx][1])+40
-            theta3 = int(waypoints[idx][2])+40
-            print(theta1, theta2, theta3)
-            serialComm.send2robot(theta1, theta2, theta3, False)
-            idx += 1
+
+                # Ready to take orders
+                theta1 = int(waypoints[idx][0])
+                theta2 = int(waypoints[idx][1])
+                theta3 = int(waypoints[idx][2])
+
+                print(theta1,theta2, theta3)
+                serialComm.send2robot(theta1, theta2, theta3, False)
+                idx += 1
+                a = False
+           
 
         if idx >= len(waypoints):
             idx = 0
